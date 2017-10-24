@@ -50,6 +50,16 @@ void toLab(const Mat & imgSrc, Mat &ImgSrcLab){
 	cvtColor(imgSrc, ImgSrcLab, CV_BGR2Lab);
 }
 
+//=======================================================================================
+// to Gray
+//=======================================================================================
+void toGray(const Mat & imgSrc, Mat &ImgSrcLab){
+	cvtColor(imgSrc, ImgSrcLab, CV_BGR2GRAY);
+}
+
+void createWhiteImage(int u, int v, Mat & white){
+	white = Mat(u, v, CV_8UC3, Scalar(255,255,255));
+}
 
 
 
@@ -65,8 +75,9 @@ int main(int argc, char** argv){
   	}
 
   	Mat inputImageSrc;
-
+  	Mat inputImageSrcGray;
   	Mat gradX, gradY;
+  	Mat white;
 
 
   	// Ouvrir l'image d'entr�e et v�rifier que l'ouverture du fichier se d�roule normalement
@@ -77,11 +88,33 @@ int main(int argc, char** argv){
         return -1;
     }
 
-    Sobel(inputImageSrc, gradX, -1, 0, 1);
-    Sobel(inputImageSrc, gradY, -1, 1, 0);
+    toGray(inputImageSrc, inputImageSrcGray);
 
-	imshow("gradX", norm_0_255(gradX));
-	imshow("gradY", norm_0_255(gradY));
+    Sobel(inputImageSrcGray, gradX, -1, 0, 1);
+    Sobel(inputImageSrcGray, gradY, -1, 1, 0);
+
+    createWhiteImage(inputImageSrc.rows,inputImageSrc.cols,white);
+
+    int count = 500000;
+    for (int i = 0; i < count; ++i)
+    {
+    	int u = rand() % inputImageSrc.rows;
+    	int v = rand() % inputImageSrc.cols;
+
+    	int valGradX = gradX.at<unsigned char>(u,v);
+    	int valGradY = gradY.at<unsigned char>(u,v);
+
+    	float norm = sqrt(valGradY*valGradY + valGradX* valGradX);
+
+    	if(norm > 0.2){
+			line(white, Point(v,u), Point(v+(valGradY/norm),u+(-valGradX/norm)), Scalar(0,0,0) );
+		}
+    }
+
+	imshow("white", white);
+	imshow("gradX", gradX);
+	imshow("gradY", gradY);
+	//imshow("gradY", norm_0_255(gradY));
 	cvWaitKey();
 
   	return 0;
