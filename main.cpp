@@ -46,7 +46,7 @@ void toYCrCb(const Mat & imgSrc, Mat &ImgSrcYCrCb){
 //=======================================================================================
 // to Lab
 //=======================================================================================
-void toYCrCb(const Mat & imgSrc, Mat &ImgSrcLab){
+void toLab(const Mat & imgSrc, Mat &ImgSrcLab){
 	cvtColor(imgSrc, ImgSrcLab, CV_BGR2Lab);
 }
 
@@ -59,24 +59,30 @@ void toYCrCb(const Mat & imgSrc, Mat &ImgSrcLab){
 //=======================================================================================
 //=======================================================================================
 int main(int argc, char** argv){
-  if (argc < 2){
-    std::cout << "No image data or not enough ... At least one argument is required! \n";
-    return -1;
-  }
+	if (argc < 2){
+    	std::cout << "No image data or not enough ... At least one argument is required! \n";
+    	return -1;
+  	}
 
-  Mat inputImageSrc;
+  	Mat inputImageSrc;
+
+  	Mat gradX, gradY;
 
 
-  // Ouvrir l'image d'entr�e et v�rifier que l'ouverture du fichier se d�roule normalement
-  inputImageSrc = imread(argv[1], CV_LOAD_IMAGE_COLOR);
-  if(!inputImageSrc.data ) { // Check for invalid input
-        std::cout <<  "Could not open or find the image " << argv[1] << std::endl ;
+  	// Ouvrir l'image d'entr�e et v�rifier que l'ouverture du fichier se d�roule normalement
+  	inputImageSrc = imread(argv[1], CV_LOAD_IMAGE_COLOR);
+  	if(!inputImageSrc.data ) { // Check for invalid input
+  		std::cout <<  "Could not open or find the image " << argv[1] << std::endl ;
 		waitKey(0); // Wait for a keystroke in the window
         return -1;
-  }
+    }
 
-	imshow("inputImageSrc", norm_0_255(inputImageSrc));
+    Sobel(inputImageSrc, gradX, -1, 0, 1);
+    Sobel(inputImageSrc, gradY, -1, 1, 0);
+
+	imshow("gradX", norm_0_255(gradX));
+	imshow("gradY", norm_0_255(gradY));
 	cvWaitKey();
 
-  return 0;
+  	return 0;
 }
