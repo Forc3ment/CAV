@@ -77,7 +77,7 @@ int main(int argc, char** argv){
   	Mat inputImageSrc;
   	Mat inputImageSrcGray;
   	Mat gradX, gradY;
-  	Mat white;
+  	Mat white, overlay;
 
 
   	// Ouvrir l'image d'entr�e et v�rifier que l'ouverture du fichier se d�roule normalement
@@ -95,7 +95,10 @@ int main(int argc, char** argv){
 
     createWhiteImage(inputImageSrc.rows,inputImageSrc.cols,white);
 
-    int count = 500000;
+	white.copyTo(overlay);
+
+    int count = 20000;
+    double alpha = 0.5;
     for (int i = 0; i < count; ++i)
     {
     	int u = rand() % inputImageSrc.rows;
@@ -106,8 +109,17 @@ int main(int argc, char** argv){
 
     	float norm = sqrt(valGradY*valGradY + valGradX* valGradX);
 
-    	if(norm > 0.2){
-			line(white, Point(v,u), Point(v+(valGradY/norm),u+(-valGradX/norm)), Scalar(0,0,0) );
+    	//cout << norm << endl;
+
+    	if(norm > 40)
+    	{
+    		white.copyTo(overlay);
+			line(overlay, Point(v,u), Point(v+((valGradY/norm)*10),u+((-valGradX/norm)*10)), Scalar(0,0,0), 1);
+			addWeighted(overlay, alpha, white, 1 - alpha, 0, white);
+		}
+		else
+		{
+			i--;
 		}
     }
 
