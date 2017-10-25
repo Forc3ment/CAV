@@ -61,6 +61,135 @@ void createWhiteImage(int u, int v, Mat & white){
 	white = Mat(u, v, CV_8UC3, Scalar(255,255,255));
 }
 
+//=======================================================================================
+// Sketching
+//=======================================================================================
+
+void sketchingGray(const Mat & grayImg)
+{
+  	Mat gradX, gradY;
+  	Mat white, overlay;
+
+	Sobel(grayImg, gradX, -1, 0, 1);
+    Sobel(grayImg, gradY, -1, 1, 0);
+
+    createWhiteImage(grayImg.rows,grayImg.cols,white);
+
+	white.copyTo(overlay);
+
+    int count = 20000;
+    double alpha = 0.5;
+    int length = 5;
+    for (int i = 0; i < count; ++i)
+    {
+    	int u = rand() % grayImg.rows;
+    	int v = rand() % grayImg.cols;
+
+    	int valGradX = gradX.at<unsigned char>(u,v);
+    	int valGradY = gradY.at<unsigned char>(u,v);
+
+    	float norm = sqrt(valGradY*valGradY + valGradX* valGradX);
+
+    	//cout << norm << endl;
+
+    	if(norm > 40)
+    	{
+    		white.copyTo(overlay);
+			line(overlay, Point(v-((valGradX/norm)*length),u-((-valGradY/norm)*length)), Point(v+((valGradX/norm)*length),u+((-valGradY/norm)*length)), Scalar(0,0,0), 1);
+			addWeighted(overlay, alpha, white, 1 - alpha, 0, white);
+		}
+		else
+		{
+			i--;
+		}
+    }
+
+	imshow("white", white);
+	imshow("gradX", gradX);
+	imshow("gradY", gradY);
+	//imshow("gradY", norm_0_255(gradY));
+	cvWaitKey();
+}
+
+void sketching(const Mat & img)
+{
+  	Mat gradX, gradY;
+  	Mat gray;
+  	Mat white, overlay;
+
+  	toGray(img,gray);
+	Sobel(gray, gradX, -1, 0, 1);
+    Sobel(gray, gradY, -1, 1, 0);
+
+    createWhiteImage(img.rows,img.cols,white);
+
+	//Mat visited = zeros(img.rows,img.cols,CV_8U);
+	Mat visited = Mat(img.rows,img.cols, CV_8UC1, 0);
+
+    int count = 200;
+    int length = 5;
+    int thickness = 1;
+    int percent = 0.1;
+    bool BW = true;
+    for (int i = 0; i < count; ++i)
+    {
+    	int u = rand() % img.rows;
+    	int v = rand() % img.cols;
+
+    	int valGradX = gradX.at<unsigned char>(u,v);
+    	int valGradY = gradY.at<unsigned char>(u,v);
+
+    	float norm = sqrt(valGradY*valGradY + valGradX* valGradX);
+
+    	if(norm > 40)
+    	{
+    		LineIterator lineIterator(white, Point(v,u), Point(v+((valGradX/norm)*length),u+((-valGradY/norm)*length)), 8, true);
+    		//LineIterator lineIterator(white, Point(v-((valGradX/norm)*length),u-((-valGradY/norm)*length)), Point(v+((valGradX/norm)*length),u+((-valGradY/norm)*length)), 8, true);
+    		for (int i = 0; i < count; ++i, ++lineIterator)
+    		{
+    			for(int x = -thickness; x <= thickness; x++)
+		        {
+		            for(int  y= -thickness; y <= thickness; y++)
+		            {
+		                Point pos = lineIterator.pos() + Point(x,y);
+		                
+		                if(pos.x >= 0 && pos.x < img.cols && pos.y >= 0 && pos.y < img.rows)
+                		{
+                			cout << pos.x << " " << pos.y << endl;
+                			cout << visited.cols << " " << visited.rows << endl;
+                    		if(visited.at<unsigned char>(pos.x, pos.y) == 0)
+                    		{
+                    			cout << pos.x << " " << pos.y << endl;
+                    			Vec3b& pix = white.at<Vec3b>(pos);
+                    			const Vec3b& temp = BW ? Vec3b(255, 255, 255) : img.at<Vec3b>(pos);
+                    			
+                    			pix += temp * percent;
+
+                    			// pix[0] = min(255, pix[0]);
+                    			// pix[1] = min(255, pix[1]);
+                    			// pix[2] = min(255, pix[2]);
+
+                    			visited.at<unsigned char>(pos) = (unsigned char)1;
+                    		}
+                    		cout << "Pas de if" <<endl;
+                    	}
+		    		}
+		    	}
+		    }
+
+		}
+		else
+		{
+			i--;
+		}
+    }
+
+	imshow("white", white);
+	imshow("gradX", gradX);
+	imshow("gradY", gradY);
+	//imshow("gradY", norm_0_255(gradY));
+	cvWaitKey();
+}
 
 
 //=======================================================================================
@@ -90,44 +219,8 @@ int main(int argc, char** argv){
 
     toGray(inputImageSrc, inputImageSrcGray);
 
-    Sobel(inputImageSrcGray, gradX, -1, 0, 1);
-    Sobel(inputImageSrcGray, gradY, -1, 1, 0);
-
-    createWhiteImage(inputImageSrc.rows,inputImageSrc.cols,white);
-
-	white.copyTo(overlay);
-
-    int count = 20000;
-    double alpha = 0.5;
-    for (int i = 0; i < count; ++i)
-    {
-    	int u = rand() % inputImageSrc.rows;
-    	int v = rand() % inputImageSrc.cols;
-
-    	int valGradX = gradX.at<unsigned char>(u,v);
-    	int valGradY = gradY.at<unsigned char>(u,v);
-
-    	float norm = sqrt(valGradY*valGradY + valGradX* valGradX);
-
-    	//cout << norm << endl;
-
-    	if(norm > 40)
-    	{
-    		white.copyTo(overlay);
-			line(overlay, Point(v,u), Point(v+((valGradY/norm)*10),u+((-valGradX/norm)*10)), Scalar(0,0,0), 1);
-			addWeighted(overlay, alpha, white, 1 - alpha, 0, white);
-		}
-		else
-		{
-			i--;
-		}
-    }
-
-	imshow("white", white);
-	imshow("gradX", gradX);
-	imshow("gradY", gradY);
-	//imshow("gradY", norm_0_255(gradY));
-	cvWaitKey();
+    //sketchingGray(inputImageSrcGray);
+    sketching(inputImageSrc);
 
   	return 0;
 }
