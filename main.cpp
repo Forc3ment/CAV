@@ -124,12 +124,12 @@ void sketching(const Mat & img)
     createWhiteImage(img.rows,img.cols,white);
 
 	//Mat visited = zeros(img.rows,img.cols,CV_8U);
-	Mat visited = Mat(img.rows,img.cols, CV_8UC1, 0);
+	Mat visited = Mat(img.rows,img.cols, CV_8UC1, Scalar(0));
 
-    int count = 200;
-    int length = 5;
+    int count = 5000;
+    int length = 10;
     int thickness = 1;
-    int percent = 0.1;
+    float percent = 0.2;
     bool BW = true;
     for (int i = 0; i < count; ++i)
     {
@@ -143,9 +143,8 @@ void sketching(const Mat & img)
 
     	if(norm > 40)
     	{
-    		LineIterator lineIterator(white, Point(v,u), Point(v+((valGradX/norm)*length),u+((-valGradY/norm)*length)), 8, true);
-    		//LineIterator lineIterator(white, Point(v-((valGradX/norm)*length),u-((-valGradY/norm)*length)), Point(v+((valGradX/norm)*length),u+((-valGradY/norm)*length)), 8, true);
-    		for (int i = 0; i < count; ++i, ++lineIterator)
+    		LineIterator lineIterator(white, Point(v-((valGradX/norm)*length),u-((-valGradY/norm)*length)), Point(v+((valGradX/norm)*length),u+((-valGradY/norm)*length)), 8, true);
+    		for (int i = 0; i < lineIterator.count; ++i, ++lineIterator)
     		{
     			for(int x = -thickness; x <= thickness; x++)
 		        {
@@ -155,23 +154,15 @@ void sketching(const Mat & img)
 		                
 		                if(pos.x >= 0 && pos.x < img.cols && pos.y >= 0 && pos.y < img.rows)
                 		{
-                			cout << pos.x << " " << pos.y << endl;
-                			cout << visited.cols << " " << visited.rows << endl;
                     		if(visited.at<unsigned char>(pos.x, pos.y) == 0)
                     		{
-                    			cout << pos.x << " " << pos.y << endl;
                     			Vec3b& pix = white.at<Vec3b>(pos);
                     			const Vec3b& temp = BW ? Vec3b(255, 255, 255) : img.at<Vec3b>(pos);
-                    			
-                    			pix += temp * percent;
 
-                    			// pix[0] = min(255, pix[0]);
-                    			// pix[1] = min(255, pix[1]);
-                    			// pix[2] = min(255, pix[2]);
+                    			pix -= temp * percent;
 
                     			visited.at<unsigned char>(pos) = (unsigned char)1;
                     		}
-                    		cout << "Pas de if" <<endl;
                     	}
 		    		}
 		    	}
@@ -187,7 +178,7 @@ void sketching(const Mat & img)
 	imshow("white", white);
 	imshow("gradX", gradX);
 	imshow("gradY", gradY);
-	//imshow("gradY", norm_0_255(gradY));
+
 	cvWaitKey();
 }
 
