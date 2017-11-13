@@ -53,81 +53,242 @@ void toLab(const Mat & imgSrc, Mat &ImgSrcLab){
 //=======================================================================================
 // to Gray
 //=======================================================================================
-void toGray(const Mat & imgSrc, Mat &ImgSrcLab){
-	cvtColor(imgSrc, ImgSrcLab, CV_BGR2GRAY);
-}
-
-void createWhiteImage(int u, int v, Mat & white){
-	white = Mat(u, v, CV_8UC3, Scalar(255,255,255));
+void toGray(const Mat & imgSrc, Mat &ImgSrcGray){
+	cvtColor(imgSrc, ImgSrcGray, CV_BGR2GRAY);
 }
 
 //=======================================================================================
-// Sketching Lines
+// to YUV
 //=======================================================================================
+void toYUV(const Mat & imgSrc, Mat &ImgSrcYUV){
+	cvtColor(imgSrc, ImgSrcYUV, CV_BGR2YUV);
+}
 
-// void sketchingGray(const Mat & grayImg)
-// {
-//   	Mat gradX, gradY;
-//   	Mat white, overlay;
 
-// 	Sobel(grayImg, gradX, -1, 0, 1);
-//     Sobel(grayImg, gradY, -1, 1, 0);
+//=======================================================================================
+// Gradient
+//=======================================================================================
+void getGradient(const Mat & img, Mat &gradX, Mat &gradY){
+	
+	Mat gray, imgBlur;
 
-//     createWhiteImage(grayImg.rows,grayImg.cols,white);
+	toGray(img,gray);
 
-// 	white.copyTo(overlay);
+	GaussianBlur(gray, imgBlur, Size(3,3),0);
 
-//     int count = 20000;
-//     double alpha = 0.5;
-//     int length = 5;
-//     for (int i = 0; i < count; ++i)
-//     {
-//     	int u = rand() % grayImg.rows;
-//     	int v = rand() % grayImg.cols;
-
-//     	int valGradX = gradX.at<unsigned char>(u,v);
-//     	int valGradY = gradY.at<unsigned char>(u,v);
-
-//     	float norm = sqrt(valGradY*valGradY + valGradX* valGradX);
-
-//     	//cout << norm << endl;
-
-//     	if(norm > 40)
-//     	{
-//     		white.copyTo(overlay);
-// 			line(overlay, Point(v-((valGradX/norm)*length),u-((-valGradY/norm)*length)), Point(v+((valGradX/norm)*length),u+((-valGradY/norm)*length)), Scalar(0,0,0), 1);
-// 			addWeighted(overlay, alpha, white, 1 - alpha, 0, white);
-// 		}
-// 		else
-// 		{
-// 			i--;
-// 		}
-//     }
-
-// 	imshow("white", white);
-// 	imshow("gradX", gradX);
-// 	imshow("gradY", gradY);
-// 	//imshow("gradY", norm_0_255(gradY));
-// 	cvWaitKey();
-// }
-
-void sketchingLines(const Mat & img)
-{
-	cout << "------ Sketching Lines ------" << endl;
-	Mat gradX, gradY;
-  	Mat gray, gray16;
-  	Mat white, overlay;
-
-  	toGray(img,gray);
-
-  	Sobel(gray, gradX, CV_16S, 0, 1, 3);
-    Sobel(gray, gradY, CV_16S, 1, 0, 3);
+  	Sobel(imgBlur, gradX, CV_16S, 0, 1, 3);
+    Sobel(imgBlur, gradY, CV_16S, 1, 0, 3);
 
     gradX = abs(gradX);
     gradY = abs(gradY);
 
     gradX.convertTo(gradX, CV_8U);
     gradY.convertTo(gradY, CV_8U);
+}
+
+//=======================================================================================
+// Tensor
+//=======================================================================================
+
+void getSingularValue(const float a, const float b, const float d, Vec2f &singularVector, Vec2f &singularValue)
+{
+	Mat A(2,2, CV_32F);
+	A.at<float>(0,0) = a;
+	A.at<float>(0,1) = A.at<float>(1,0) = b;
+	A.at<float>(1,1) = d;
+
+	Mat w, u, vt; //w -> singular values, u -> left singular vectors, vt -> right singular vectors transposed
+
+	SVD::compute(A, w, u, vt); // Calcul de la décomposition en valeurs/vecteurs propres
+
+	singularVector[0] = u.at<float>(0,0);
+	singularVector[1] = u.at<float>(0,1);
+
+	singularValue = w;
+}
+
+void getTensor(const Mat & img, Mat &a, Mat &b, Mat &d, Mat &tensor)
+{
+
+	Mat imgBlur;
+	Mat gX, gY;
+	Mat white = Mat(img.size(), CV_32F);
+	Vec2f singularVector, singularValue;
+
+	vector<Mat> gradX, gradY, YUV;
+
+	a = Mat(img.size(), CV_32F);
+	b = Mat(img.size(), CV_32F);
+	d = Mat(img.size(), CV_32F);
+
+	GaussianBlur(img, imgBlur, Size(7,7),0);
+
+	Sobel(imgBlur, gX, CV_32F, 0, 1, 5);
+   	Sobel(imgBlur, gY, CV_32F, 1, 0, 5);
+	
+    split(gX,gradX);
+    split(gY,gradY);
+  	
+    for (int i = 0; i < img.rows; ++i)
+    {
+    	for (int j = 0; j < img.cols; ++j)
+    	{
+    		// Recuperation des gradiens des 3 composantes.
+    		float gXB = gradX[0].at<float>(i,j);
+    		float gYB = gradY[0].at<float>(i,j);
+
+    		float gXG = gradX[1].at<float>(i,j);
+    		float gYG = gradY[1].at<float>(i,j);
+
+    		float gXR = gradX[2].at<float>(i,j);
+    		float gYR = gradY[2].at<float>(i,j);
+    		
+    		//Calcul des 4 valeurs du tenseur en chaques points de l'image (a,b;c,d) avec b=c car matrice symétrique
+    		a.at<float>(i,j) = gXB * gXB + gXG * gXG + gXR * gXR;
+    		b.at<float>(i,j) = gXB * gYB + gXG * gYG + gXR * gYR;
+    		d.at<float>(i,j) = gYB * gYB + gYG * gYG + gYR * gYR;
+
+    		// Stockage dans une image pour simplifier l'acces a la valeur du tenseur (et la ramener ensuite entre 0 et 255)
+    		getSingularValue(a.at<float>(i,j), b.at<float>(i,j), d.at<float>(i,j), singularVector, singularValue);
+    		white.at<float>(i, j) = abs(singularValue[0] - singularValue[1]);
+    	}
+    }
+
+    tensor = norm_0_255(white);
+
+  	cvWaitKey();
+}
+
+void drawTensor(const Mat & img)
+{
+	Mat a, b, d;
+  	Vec2f singularVector, singularValue;
+  	Mat white = Mat(img.size(), CV_32F);
+
+  	getTensor(img, a, b, d, white);
+  	
+  	imshow("white", norm_0_255(white));
+
+  	cvWaitKey();
+}
+
+void createWhiteImage(int u, int v, Mat & white)
+{
+	white = Mat(u, v, CV_8UC3, Scalar(255,255,255));
+}
+
+//=======================================================================================
+// Sketching Lines with Tensor
+//=======================================================================================
+
+void sketchingLinesWithTensor(const Mat & img)
+{
+	cout << "------ Sketching Lines with Tensor ------" << endl;
+	Mat a, b, d;
+  	Vec2f singularVector, singularValue;
+  	Mat white;
+  	Mat tensor;
+
+  	//Calcul du tenseur et des matrices a b et d
+  	getTensor(img, a, b, d, tensor);
+
+    createWhiteImage(img.rows,img.cols,white);
+
+    int count = 1000;
+    int length = 10;
+    int thickness = 0;
+    float percent = 0.2;
+    int threshold = 40;
+    bool BW = true;
+
+    for (int i = 0; i < count; ++i)
+    {
+    	// image pour eviter de colorier la meme case sur un passage
+    	Mat visited = Mat(img.rows,img.cols, CV_8UC1, Scalar(0)); 
+    	
+    	// Récupération d'un point aléatoire de l'image
+    	int u = rand() % img.rows;
+    	int v = rand() % img.cols;
+
+    	//Et des valeurs des matrices a, b et d pour calculer les valeurs et vecteurs propres
+    	float valA = a.at<float>(u,v);
+    	float valB = b.at<float>(u,v);
+    	float valD = d.at<float>(u,v);
+
+    	getSingularValue(valA, valB, valD, singularVector, singularValue);
+
+    	// récupération de la valeurs du tenseur qui a ete reprojeté entre 0 et 255
+    	float norm = tensor.at<unsigned char>(u,v);
+
+    	if(norm > threshold)
+    	{
+    		//Choix de deux point autour de celui tiré aléatoiremennt en fonction des vecteurs propres calculé précédemment
+    		//On tracera une ligne entre ces deux points.
+    		LineIterator lineIterator(white, 
+    				Point( v-(singularVector[0]*length) ,u-(singularVector[1]*length)), 
+    				Point( v+(singularVector[0]*length) ,u+(singularVector[1]*length)),
+    				8, true);
+    		
+    		for (int i = 0; i < lineIterator.count; ++i, ++lineIterator)
+    		{
+    			//boucle x et y pour gérer l'épaisseur de la ligne
+    			for(int x = -thickness; x <= thickness; x++)
+		        {
+		            for(int  y= -thickness; y <= thickness; y++)
+		            {
+		            	// récupération de la position grace à l'itérateur et modification selon l'épaisseur
+		                Point pos = lineIterator.pos() + Point(x,y);
+		                
+		                //vérification si on sort pas de l'image
+		                if(pos.x >= 0 && pos.x < img.cols && pos.y >= 0 && pos.y < img.rows)
+                		{
+                    		if(visited.at<unsigned char>(pos) == 0)
+                    		{
+                    			// recuperation de la couleur courante
+                    			Vec3b& pix = white.at<Vec3b>(pos); 
+
+                    			//calcul de la valeur qui sera utilisé pour colorier l'image
+                    			const Vec3b& temp = BW ? Vec3b(255, 255, 255) : img.at<Vec3b>(pos);
+
+                    			if(BW) pix -= temp * percent;
+                    			else pix = temp * percent;
+
+
+                    			visited.at<unsigned char>(pos) = (unsigned char)1;
+                    		}
+                    	}
+		    		}
+		    	}
+		    }
+
+		}
+		else
+		{
+			// Si le seuil n'est pas dépassé alors on recommence l'itération.
+			i--;
+		}
+    }
+
+
+	imwrite("sketchingLinesTensor.jpg", white);
+	cout << "------ Saving Sketching ------" << endl;
+}
+
+
+//=======================================================================================
+// Sketching Lines with Gradient
+//=======================================================================================
+void sketchingLinesWithGradient(const Mat & img)
+{ 	
+	// Commentaires complet dans la fonction sketchingLinesWithTensor
+	
+	cout << "------ Sketching Lines with Gradient ------" << endl;
+	Mat gradX, gradY;
+  	
+  	Mat white;
+
+  	//Calcul des gradient
+  	getGradient(img, gradX, gradY);
 
     createWhiteImage(img.rows,img.cols,white);
 
@@ -136,19 +297,24 @@ void sketchingLines(const Mat & img)
     int thickness = 0;
     float percent = 0.2;
     bool BW = true;
+    int threshold = 30;
+
     for (int i = 0; i < count; ++i)
     {
     	Mat visited = Mat(img.rows,img.cols, CV_8UC1, Scalar(0));
     	int u = rand() % img.rows;
     	int v = rand() % img.cols;
 
+    	// Récupération des valeurs des grdients
     	int valGradX = gradX.at<unsigned char>(u,v);
     	int valGradY = gradY.at<unsigned char>(u,v);
 
+    	// Calcul de sa norme
     	float norm = sqrt(valGradY*valGradY + valGradX* valGradX);
 
-    	if(norm > 40)
+    	if(norm > threshold)
     	{
+    		//Ligne dans la direction de la normal au gradient
     		LineIterator lineIterator(white, Point(v-((valGradX/norm)*length),u-((-valGradY/norm)*length)), Point(v+((valGradX/norm)*length),u+((-valGradY/norm)*length)), 8, true);
     		for (int i = 0; i < lineIterator.count; ++i, ++lineIterator)
     		{
@@ -165,7 +331,8 @@ void sketchingLines(const Mat & img)
                     			Vec3b& pix = white.at<Vec3b>(pos);
                     			const Vec3b& temp = BW ? Vec3b(255, 255, 255) : img.at<Vec3b>(pos);
 
-                    			pix -= temp * percent;
+                    			if(BW) pix -= temp * percent;
+                    			else pix = temp * percent;
 
                     			visited.at<unsigned char>(pos) = (unsigned char)1;
                     		}
@@ -186,7 +353,7 @@ void sketchingLines(const Mat & img)
 }
 
 //=======================================================================================
-// Sketching Spline
+// Spline
 //=======================================================================================
 
 typedef vector<double> vec;
@@ -253,35 +420,167 @@ vector<SplineSet> spline(vec &x, vec &y)
     return output_set;
 }
 
-void sketchingSplines(const Mat & img)
+//=======================================================================================
+// Sketching Lines with Tensor
+//=======================================================================================
+
+void sketchingSplinesWithTensor(const Mat & img)
 {
+	cout << "------ Sketching Splines with Tensor ------" << endl;
+	Mat a, b, d;
+  	Vec2f singularVector, singularValue;
+  	Mat white;
+  	Mat tensor;
 
-	cout << "------ Sketching Splines ------" << endl;
-
-	Mat gradX, gradY;
-  	Mat gray, gray16;
-  	Mat white, overlay;
-
-  	toGray(img,gray);
-
-  	Sobel(gray, gradX, CV_16S, 0, 1, 3);
-    Sobel(gray, gradY, CV_16S, 1, 0, 3);
-
-    gradX = abs(gradX);
-    gradY = abs(gradY);
-
-    gradX.convertTo(gradX, CV_8U);
-    gradY.convertTo(gradY, CV_8U);
+  	getTensor(img, a, b, d, tensor);
 
     createWhiteImage(img.rows,img.cols,white);
 
-    int count = 10000;
+    int count = 1000;
     int length = 10;
+    int thickness = 0;
+    float percent = 0.2;
+    int threshold = 40;
+    int maxSize = 10;
+    bool BW = true;
+
+    for (int i = 0; i < count; ++i)
+    {
+    	vec X, Y;
+
+    	Mat visited = Mat(img.rows,img.cols, CV_8UC1, Scalar(0));
+    	
+    	int u = rand() % img.rows;
+    	int v = rand() % img.cols;
+
+    	float valA = a.at<float>(u,v);
+    	float valB = b.at<float>(u,v);
+    	float valD = d.at<float>(u,v);
+
+    	getSingularValue(valA, valB, valD, singularVector, singularValue);
+
+    	float norm = tensor.at<unsigned char>(u,v);
+
+    	if(norm > threshold)
+    	{
+    		//Sauvegardes du point aléatoire dans X et Y
+    		X.push_back(v);
+    		Y.push_back(u);
+			
+    		for (int i = 0; i < maxSize; ++i)
+    		{
+    			//On regarde dans la direction de la normale au gradient
+    			u+=(singularVector[1]*length);
+    			v+=(singularVector[0]*length);
+
+    			//Si on est toujours dans l'image
+    			if(v >= 0 && v < img.cols && u >= 0 && u < img.rows)
+    			{
+    				//Et si la valeur du tenseur est assez importante
+    	   			float norm = tensor.at<unsigned char>(u,v);
+	    
+	    			if(norm > threshold)
+	    			{
+	    				//alors on sauve aussi le point et ainsi de suite jusqu'a un max de maxSize
+	    				X.push_back(v);
+	    				Y.push_back(u);
+	    			}
+	    			else break;
+    			}
+    			else break;
+    		}
+
+    		if(X.size() == 1)
+    		{
+    			i--; //Si X ne contient qu'un seul point on recommence l'itération 
+    		}
+    		else
+    		{
+    			//Calcul des caractéristique des splines en fonction des point données
+	    		vector<SplineSet> cs = spline(X, Y);
+
+			    for(unsigned int i = 0; i < cs.size(); ++i)
+			    { 
+			    	// on tracera la splin de point avec le x le plus petit vers le x le plus grand
+			    	double tempX1, tempX2;
+			    	if(X[i] < X[i+1]) 
+			    	{
+			    		tempX1 = X[i];
+			    		tempX2 = X[i+1];
+			    	}
+			    	else
+			    	{
+			    		tempX2 = X[i];
+			    		tempX1 = X[i+1];
+			    	}
+
+			    	//Sauvegarde de la valeur du pixel au point initial.
+			    	const Vec3b& temp = BW ? Vec3b(255, 255, 255) : img.at<Vec3b>(Point(X[0], Y[0]));
+
+			    	//Parcours de la spline par de petits pas pour ne pas rater de point en Y
+			        for (double t = tempX1; t < tempX2; t+=0.05)
+			        {
+			        	for(int x = -thickness; x <= thickness; x++)
+					    {
+					        for(int  y= -thickness; y <= thickness; y++)
+					        {
+					        	//Calcul du point a colorier
+					           	double St = cs[i].a + cs[i].b * (t-X[i]) + cs[i].c * (t-X[i]) * (t-X[i]) + cs[i].d * (t-X[i]) * (t-X[i]) * (t-X[i]);
+					            Point pos = Point((int)t,(int)St) + Point(x,y);
+
+					            if(pos.x >= 0 && pos.x < img.cols && pos.y >= 0 && pos.y < img.rows)
+			               		{
+			                  		if(visited.at<unsigned char>(pos) == 0)
+			                   		{
+			                   			Vec3b& pix = white.at<Vec3b>(pos);
+			                   			
+		                    			if(BW) pix -= temp * percent;
+		                    			else pix = temp;
+
+		                    			visited.at<unsigned char>(pos) = (unsigned char)1;
+		                    		}
+		                    	}
+				    		}
+				    	}
+			        }
+			    }
+    		}
+		    
+		}
+		else
+		{
+			i--;
+		}
+	}
+
+
+	imwrite("sketchingSplinesTensor.jpg", white);
+	cout << "------ Saving Sketching ------" << endl;
+}
+
+//=======================================================================================
+// Sketching Spline with Gradient
+//=======================================================================================
+
+void sketchingSplinesWithGradient(const Mat & img)
+{
+
+	cout << "------ Sketching Splines with Gradient ------" << endl;
+
+	Mat gradX, gradY;
+  	Mat white;
+
+  	getGradient(img, gradX, gradY);
+
+    createWhiteImage(img.rows,img.cols,white);
+
+    int count = 20000;
+    int length = 5;
     int thickness = 0;
     float percent = 0.05;
     bool BW = true;
-    int maxSize = 20;
-    int threshold = 150;
+    int maxSize = 5;
+    int threshold = 50;
 
     for (int i = 0; i < count; ++i)
     {
@@ -398,6 +697,8 @@ int main(int argc, char** argv){
   	}
 
   	Mat inputImageSrc;
+  	Mat a, b, d;
+  	Vec2f temp, temp2;
 
   	// Ouvrir l'image d'entr�e et v�rifier que l'ouverture du fichier se d�roule normalement
   	inputImageSrc = imread(argv[1], CV_LOAD_IMAGE_COLOR);
@@ -407,10 +708,11 @@ int main(int argc, char** argv){
         return -1;
     }
 
-    sketchingSplines(inputImageSrc);
+    sketchingSplinesWithGradient(inputImageSrc);
+    sketchingSplinesWithTensor(inputImageSrc);
+	sketchingLinesWithGradient(inputImageSrc);
+    sketchingLinesWithTensor(inputImageSrc);
 
-    sketchingLines(inputImageSrc);
-
-	cvWaitKey();
+	//cvWaitKey();
   	return 0;
 }
