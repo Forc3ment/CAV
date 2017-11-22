@@ -194,11 +194,11 @@ void sketchingLinesWithTensor(const Mat & img)
 
     createWhiteImage(img.rows,img.cols,white);
 
-    int count = 1000;
-    int length = 10;
+    int count = 10000;
+    int length = 5;
     int thickness = 0;
-    float percent = 0.2;
-    int threshold = 40;
+    float percent = 0.1;
+    int threshold = 3;
     bool BW = true;
 
     for (int i = 0; i < count; ++i)
@@ -421,7 +421,7 @@ vector<SplineSet> spline(vec &x, vec &y)
 }
 
 //=======================================================================================
-// Sketching Lines with Tensor
+// Sketching Splines with Tensor
 //=======================================================================================
 
 void sketchingSplinesWithTensor(const Mat & img)
@@ -436,12 +436,12 @@ void sketchingSplinesWithTensor(const Mat & img)
 
     createWhiteImage(img.rows,img.cols,white);
 
-    int count = 1000;
-    int length = 10;
+    int count = 10000;
+    int length = 4;
     int thickness = 0;
-    float percent = 0.2;
-    int threshold = 40;
-    int maxSize = 10;
+    float percent = 0.1;
+    int threshold = 5;
+    int maxSize = 40;
     bool BW = true;
 
     for (int i = 0; i < count; ++i)
@@ -574,7 +574,7 @@ void sketchingSplinesWithGradient(const Mat & img)
 
     createWhiteImage(img.rows,img.cols,white);
 
-    int count = 20000;
+    int count = 10000;
     int length = 5;
     int thickness = 0;
     float percent = 0.05;
