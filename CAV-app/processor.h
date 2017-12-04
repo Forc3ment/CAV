@@ -4,9 +4,14 @@
 #include <QObject>
 #include <iostream>
 #include <string>
+#include <numeric>
+#include <stdio.h>      /* printf, NULL */
+#include <stdlib.h>     /* srand, rand */
+#include <time.h>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/contrib/contrib.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 
 using namespace cv;
 using namespace std;
@@ -44,6 +49,8 @@ private:
     Mat sketchingLinesWithGradient(const Mat & img);
     Mat sketchingSplinesWithTensor(const Mat & img);
     Mat sketchingSplinesWithGradient(const Mat & img);
+    Mat lowPoly(const Mat & img);
+    void prob_edge_tensor(const Mat& picture, vector<float>& prob_x, vector< vector<float> >& prob_y, const int& height,const int& width);
 
     int m_count = 5000;
     int m_thickness = 0;

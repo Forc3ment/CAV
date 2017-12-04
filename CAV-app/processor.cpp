@@ -20,10 +20,10 @@ string toString(int i) // convert int to string
 // Create and return normalized image
 //=======================================================================================
 Mat norm_0_255(InputArray _src) {
- Mat src = _src.getMat();
- // Create and return normalized image:
- Mat dst;
- switch(src.channels()) {
+    Mat src = _src.getMat();
+    // Create and return normalized image:
+    Mat dst;
+    switch(src.channels()) {
     case 1:
         normalize(_src, dst, 0, 255, NORM_MINMAX, CV_8UC1);
         break;
@@ -31,10 +31,10 @@ Mat norm_0_255(InputArray _src) {
         normalize(_src, dst, 0, 255, NORM_MINMAX, CV_8UC3);
         break;
     default:
-    src.copyTo(dst);
-    break;
- }
- return dst;
+        src.copyTo(dst);
+        break;
+    }
+    return dst;
 }
 
 //=======================================================================================
@@ -228,7 +228,7 @@ Mat Processor::sketchingLinesWithTensor(const Mat & img)
             //Choix de deux point autour de celui tiré aléatoiremennt en fonction des vecteurs propres calculé précédemment
             //On tracera une ligne entre ces deux points.
             LineIterator lineIterator(white,
-                    Point( v-(singularVector[0]*length) ,u-(singularVector[1]*length)),
+                                      Point( v-(singularVector[0]*length) ,u-(singularVector[1]*length)),
                     Point( v+(singularVector[0]*length) ,u+(singularVector[1]*length)),
                     8, true);
 
@@ -697,29 +697,261 @@ Mat Processor::sketchingSplinesWithGradient(const Mat & img)
 }
 
 
+//=======================================================================================
+// LOWPOLY
+//=======================================================================================
+
+
+// Draw delaunay triangles
+void draw_delaunay( Mat& img, Subdiv2D& subdiv)
+{
+
+    Mat output_image = img.clone();
+
+    vector<Vec6f> triangleList;
+    subdiv.getTriangleList(triangleList);
+    Point pt[3];
+    Size size = img.size();
+    Rect rect(0,0, size.width, size.height);
+
+    for( size_t i = 0; i < triangleList.size(); i++ )
+    {
+        Vec6f t = triangleList[i];
+        pt[0] = Point(cvRound(t[0]), cvRound(t[1]));
+        pt[1] = Point(cvRound(t[2]), cvRound(t[3]));
+        pt[2] = Point(cvRound(t[4]), cvRound(t[5]));
+
+        const Point* pts[1] = {pt};
+        int npts[1] = {3};
+        Mat mask(img.size(), CV_8UC1);
+        mask = Scalar::all(0);
+        fillPoly(mask, pts, npts, 1, Scalar(255));
+
+        Scalar colour = mean(img, mask);
+        fillPoly(output_image, pts, npts, 1, colour);
+    }
+
+    imshow("window_name", output_image);
+}
+
+//Draw voronoi diagram
+void draw_voronoi( Mat& img, Subdiv2D& subdiv )
+{
+    vector<vector<Point2f> > facets;
+    vector<Point2f> centers;
+    subdiv.getVoronoiFacetList(vector<int>(), facets, centers);
+
+    vector<Point> ifacet;
+    vector<vector<Point> > ifacets(1);
+
+    for( size_t i = 0; i < facets.size(); i++ )
+    {
+        ifacet.resize(facets[i].size());
+        for( size_t j = 0; j < facets[i].size(); j++ )
+            ifacet[j] = facets[i][j];
+
+        Scalar color;
+        color[0] = rand() & 255;
+        color[1] = rand() & 255;
+        color[2] = rand() & 255;
+        fillConvexPoly(img, ifacet, color, 8, 0);
+
+        ifacets[0] = ifacet;
+        polylines(img, ifacets, true, Scalar(), 1, CV_AA, 0);
+        circle(img, centers[i], 3, Scalar(), CV_FILLED, CV_AA, 0);
+    }
+}
+
+void prob_edge_Canny(const Mat& picture, vector<float>& prob_x, vector< vector<float> >& prob_y, const int& height,const int& width)
+{
+    Mat gray, edge, draw;
+    cvtColor(picture, gray, CV_BGR2GRAY);
+
+    Canny( gray, edge, 50, 150, 3);
+
+    edge.convertTo(draw, CV_8U);
+
+    int count = 0;
+    vector<int> count_y(prob_x.size());
+
+    // We count pixels on the edges
+    for(int i = 0; i < height; i++)
+    {
+        for(int j = 0; j < width; j++)
+        {
+            if(edge.at<unsigned char>(i,j) == 255)
+            {
+                prob_x[i] = prob_x[i] + 1;
+                prob_y[i][j] = 1;
+                count = count + 1;
+                count_y[i] = count_y[i] + 1;
+            }
+        }
+    }
+
+    // We divided by the count to create a probability
+    std::transform(prob_x.begin(), prob_x.end(), prob_x.begin(),std::bind2nd(std::divides<float>(),count));
+
+    for(unsigned int i = 0; i < count_y.size(); i ++)
+    {
+        if(count_y[i] != 0)
+        {
+            std::transform(prob_y[i].begin(), prob_y[i].end(), prob_y[i].begin(),std::bind2nd(std::divides<float>(),count_y[i]));
+        }
+    }
+
+    // Cumulative sum
+    partial_sum(prob_x.begin(), prob_x.end(), prob_x.begin(), plus<double>());
+    for(unsigned int i = 0; i < count_y.size(); i ++)
+    {
+        partial_sum(prob_y[i].begin(), prob_y[i].end(), prob_y[i].begin(), plus<double>());
+    }
+}
+
+
+void Processor::prob_edge_tensor(const Mat& picture, vector<float>& prob_x, vector< vector<float> >& prob_y, const int& height,const int& width)
+{
+
+    Mat src, dst, tensor, edge, a,b,d;
+
+    src = picture.clone();
+
+    getTensor(src,a,b,d,tensor);
+
+    cv::threshold( tensor, dst, 5, 255,0 );
+
+    erode( dst, edge, 3 );
+
+    int count = 0;
+    vector<int> count_y(prob_x.size());
+
+    // We count pixels on the edges
+    for(int i = 0; i < height; i++)
+    {
+        for(int j = 0; j < width; j++)
+        {
+            if(edge.at<unsigned char>(i,j) == 255)
+            {
+                prob_x[i] = prob_x[i] + 1;
+                prob_y[i][j] = 1;
+                count = count + 1;
+                count_y[i] = count_y[i] + 1;
+            }
+        }
+    }
+
+    // We divided by the count to create a probability
+    std::transform(prob_x.begin(), prob_x.end(), prob_x.begin(),std::bind2nd(std::divides<float>(),count));
+
+    for(unsigned int i = 0; i < count_y.size(); i ++)
+    {
+        if(count_y[i] != 0)
+        {
+            std::transform(prob_y[i].begin(), prob_y[i].end(), prob_y[i].begin(),std::bind2nd(std::divides<float>(),count_y[i]));
+        }
+    }
+
+    // Cumulative sum
+    partial_sum(prob_x.begin(), prob_x.end(), prob_x.begin(), plus<double>());
+    for(unsigned int i = 0; i < count_y.size(); i ++)
+    {
+        partial_sum(prob_y[i].begin(), prob_y[i].end(), prob_y[i].begin(), plus<double>());
+    }
+
+    imshow("test",edge);
+}
+
+
+Mat Processor::lowPoly(const Mat & img)
+{
+    Mat imgCopy = img.clone();
+
+    int width = imgCopy.cols;
+    int height = imgCopy.rows;
+
+    //Arrays which contain probabilities
+    vector<float> prob_x(height);
+    vector< vector<float> > prob_y(height, vector<float>(width));
+
+    // Compute the probability of the edges
+    if(m_algo == 4)
+    {
+        prob_edge_Canny(imgCopy, prob_x, prob_y,height,width);
+    } else if (m_algo == 5)
+    {
+        prob_edge_tensor(imgCopy, prob_x, prob_y,height,width);
+    }
+
+    // Rectangle to be used with Subdiv2D
+    Size size = imgCopy.size();
+    Rect rect(0, 0, size.width, size.height);
+
+    // Create an instance of Subdiv2D
+    Subdiv2D subdiv(rect);
+
+    // Create a vector of points.
+    vector<Point2f> points;
+
+    // Draw of points acording to the probability
+    for(int i = 0; i < 5000; i++)
+    {
+        double rand_x = rand()/(double)RAND_MAX;
+        double rand_y = rand()/(double)RAND_MAX;
+        int x = (upper_bound(prob_x.begin(), prob_x.end(), rand_x) - prob_x.begin());
+        int y = (upper_bound(prob_y[x].begin(), prob_y[x].end(),rand_y) - prob_y[x].begin());
+        Point2f point(y,x);
+        points.push_back(point);
+    }
+
+    // Noise for uniform surface
+    for(int i = 0; i < 100; i++)
+    {
+        int rand_x = rand()%height;
+        int rand_y = rand()%width;
+        points.push_back(Point2f(rand_y,rand_x));
+    }
+
+    // Insert points into subdiv
+    for( vector<Point2f>::iterator it = points.begin(); it != points.end(); it++)
+    {
+        subdiv.insert(*it);
+    }
+
+    // Draw delaunay triangles
+    draw_delaunay( imgCopy, subdiv);
+
+    return imgCopy;
+}
+
+
+
+//=======================================================================================
+// MAIN & ACCESSEUR
+//=======================================================================================
+
 void Processor::process(Mat* img)
 {
     switch ( m_algo ) {
     case 0:
-      result = sketchingSplinesWithTensor(*img);
-      break;
+        result = sketchingSplinesWithTensor(*img);
+        break;
 
     case 1:
         cout << "------ Sketching Splines with Tensor ------" << endl;
-      result = sketchingSplinesWithGradient(*img);
-      break;
+        result = sketchingSplinesWithGradient(*img);
+        break;
 
     case 2:
-      result = sketchingLinesWithTensor(*img);
-      break;
+        result = sketchingLinesWithTensor(*img);
+        break;
 
     case 3:
-      result = sketchingLinesWithGradient(*img);
-      break;
+        result = sketchingLinesWithGradient(*img);
+        break;
 
     default:
-      result = sketchingSplinesWithTensor(*img);
-      break;
+        result = sketchingSplinesWithTensor(*img);
+        break;
     }
     emit processedImage(&result);
 }
