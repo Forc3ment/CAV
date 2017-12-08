@@ -19,7 +19,6 @@ controller::controller(MainWindow* window, QObject *parent) :
     connect(this, SIGNAL(rawImageToDisplay(Mat*)),&m_window,SLOT(displayRaw( Mat*)));
     connect(&m_window,SIGNAL(runButtonPressed()),this,SLOT(startProcessing()));
     connect(this, SIGNAL(rawImageToProcess(Mat*)),&m_processor,SLOT(process(Mat*)));
-    //connect(&m_processor,SIGNAL(processedImage(Mat*)),this,SLOT(receiveProcessedImage(Mat*)));
 }
 
 controller::~controller()

@@ -18,7 +18,6 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-
 void MainWindow::on_lineCountSpinBox_valueChanged(int arg1)
 {
     emit lineCountChange(arg1);
@@ -49,9 +48,7 @@ void MainWindow::initUi()
     ui->runButton->setEnabled(false);
     ui->randomPointSpinBox->setEnabled(false);
     ui->pointOnEdgeSpinBox->setEnabled(false);
-
 }
-
 
 void MainWindow::displayRaw(Mat* img)
 {
@@ -71,11 +68,9 @@ void MainWindow::displayRaw(Mat* img)
 
 void MainWindow::on_actionOuvrir_triggered()
 {
-    qDebug() << "toto";
     QString filename = QFileDialog::getOpenFileName(this,
            tr("Open Image"), "..", tr("Image Files (*.png *.jpg *.bmp)"));
 
-    qDebug() << filename;
     emit openImageTriggered(filename);
 }
 
@@ -92,6 +87,24 @@ void MainWindow::on_runButton_pressed()
 void MainWindow::on_comboBox_currentIndexChanged(int index)
 {
     emit algoChanged(index);
+    if(index == 0 || index == 1 || index == 2 || index == 3)
+    {
+        ui->colorCheckBox->setEnabled(true);
+        ui->lineCountSpinBox->setEnabled(true);
+        ui->thicknessSpinBox->setEnabled(true);
+        ui->thresholdSpinBox->setEnabled(true);
+        ui->randomPointSpinBox->setEnabled(false);
+        ui->pointOnEdgeSpinBox->setEnabled(false);
+    }
+    else
+    {
+        ui->colorCheckBox->setEnabled(false);
+        ui->lineCountSpinBox->setEnabled(false);
+        ui->thicknessSpinBox->setEnabled(false);
+        ui->thresholdSpinBox->setEnabled(false);
+        ui->randomPointSpinBox->setEnabled(true);
+        ui->pointOnEdgeSpinBox->setEnabled(true);
+    }
 }
 
 void MainWindow::on_pointOnEdgeSpinBox_valueChanged(int arg1)

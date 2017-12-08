@@ -97,6 +97,16 @@
           <string>Sketching with Lines using Gradient</string>
          </property>
         </item>
+        <item>
+         <property name="text">
+          <string>LowPoly Canny</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>LowPoly Tensor</string>
+         </property>
+        </item>
        </widget>
       </item>
       <item>
