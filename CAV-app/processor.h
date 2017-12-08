@@ -64,7 +64,7 @@ private:
     int m_maxSize = 40;
     int m_algo = 0;
     int m_pointOnEdge = 2000;
-    int m_randomPoint = 0;
+    int m_randomPoint = 200;
 
     Mat result;
 
