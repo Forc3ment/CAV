@@ -65,7 +65,6 @@ void toYUV(const Mat & imgSrc, Mat &ImgSrcYUV){
     cvtColor(imgSrc, ImgSrcYUV, CV_BGR2YUV);
 }
 
-
 //=======================================================================================
 // Gradient
 //=======================================================================================
@@ -278,7 +277,6 @@ Mat Processor::sketchingLinesWithTensor(const Mat & img)
     imshow("white", white);
     return white;
 }
-
 
 //=======================================================================================
 // Sketching Lines with Gradient
@@ -696,11 +694,9 @@ Mat Processor::sketchingSplinesWithGradient(const Mat & img)
     return white;
 }
 
-
 //=======================================================================================
 // LOWPOLY
 //=======================================================================================
-
 
 // Draw delaunay triangles
 void draw_delaunay( Mat& img, Subdiv2D& subdiv)
@@ -808,7 +804,6 @@ void prob_edge_Canny(const Mat& picture, vector<float>& prob_x, vector< vector<f
     }
 }
 
-
 void Processor::prob_edge_tensor(const Mat& picture, vector<float>& prob_x, vector< vector<float> >& prob_y, const int& height,const int& width)
 {
 
@@ -861,6 +856,25 @@ void Processor::prob_edge_tensor(const Mat& picture, vector<float>& prob_x, vect
     imshow("test",edge);
 }
 
+int Processor::getRandomPoint() const
+{
+    return m_randomPoint;
+}
+
+void Processor::setRandomPoint(int randomPoint)
+{
+    m_randomPoint = randomPoint;
+}
+
+int Processor::getPointOnEdge() const
+{
+    return m_pointOnEdge;
+}
+
+void Processor::setPointOnEdge(int pointOnEdge)
+{
+    m_pointOnEdge = pointOnEdge;
+}
 
 Mat Processor::lowPoly(const Mat & img)
 {
@@ -922,8 +936,6 @@ Mat Processor::lowPoly(const Mat & img)
 
     return imgCopy;
 }
-
-
 
 //=======================================================================================
 // MAIN & ACCESSEUR

@@ -13,6 +13,9 @@ controller::controller(MainWindow* window, QObject *parent) :
     connect(&m_window,SIGNAL(thicknessChange(int)),this,SLOT(setThickness(int)));
     connect(&m_window,SIGNAL(openImageTriggered(QString)),this,SLOT(openImage(QString)));
     connect(&m_window,SIGNAL(algoChanged(int)),this,SLOT(setAlgo(int)));
+    connect(&m_window,SIGNAL(pointOnEdgeChange(int)),this,SLOT(setPointOnEdge(int)));
+    connect(&m_window,SIGNAL(randomPointChange(int)),this,SLOT(setRandomPoint(int)));
+
     connect(this, SIGNAL(rawImageToDisplay(Mat*)),&m_window,SLOT(displayRaw( Mat*)));
     //connect(this, SIGNAL(processedImageToDisplay(Mat*)),&m_window,SLOT(displayProcessed(Mat*)));
     connect(&m_window,SIGNAL(runButtonPressed()),this,SLOT(startProcessing()));
@@ -58,6 +61,18 @@ void controller::setAlgo(int algo)
 {
     qDebug() << algo ;
     m_processor.setAlgo(algo);
+}
+
+void controller::setPointOnEdge(int number)
+{
+    qDebug() << number ;
+    m_processor.setPointOnEdge(number);
+}
+
+void controller::setRandomPoint(int number)
+{
+    qDebug() << number ;
+    m_processor.setRandomPoint(number);
 }
 
 void controller::receiveProcessedImage(Mat* img)

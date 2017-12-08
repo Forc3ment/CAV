@@ -38,6 +38,8 @@ private slots:
     void on_comboBox_currentIndexChanged(int index);
     void displayRaw(Mat* img);
     void displayProcessed(Mat* img);
+    void on_pointOnEdgeSpinBox_valueChanged(int arg1);
+    void on_randomPointSpinBox_valueChanged(int arg1);
 
 signals:
     void lengthChange(int length);
@@ -47,6 +49,8 @@ signals:
     void thicknessChange(int thickness);
     void thresholdChange(int threshold);
     void colorClicked(bool checked);
+    void pointOnEdgeChange(int arg1);
+    void randomPointChange(int arg1);
     void openImageTriggered(QString filename);
     void runButtonPressed();
     void algoChanged(int index);

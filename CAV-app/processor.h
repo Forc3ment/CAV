@@ -32,6 +32,10 @@ public:
     void setClicked(bool clicked);
     int getAlgo() const;
     void setAlgo(int algo);
+    int getPointOnEdge() const;
+    void setPointOnEdge(int pointOnEdge);
+    int getRandomPoint() const;
+    void setRandomPoint(int randomPoint);
 
 public slots:
     void process(Mat* img);
@@ -59,6 +63,8 @@ private:
     float m_percent = 0.1;
     int m_maxSize = 40;
     int m_algo = 0;
+    int m_pointOnEdge = 2000;
+    int m_randomPoint = 0;
 
     Mat result;
 

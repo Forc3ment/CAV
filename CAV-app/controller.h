@@ -24,6 +24,8 @@ public slots:
     void setThickness(int thickness);
     void setThreshold(int threshold);
     void setAlgo(int algo);
+    void setPointOnEdge(int number);
+    void setRandomPoint(int number);
     void startProcessing();
     void receiveProcessedImage(Mat* img);
 

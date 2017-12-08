@@ -100,3 +100,13 @@ void MainWindow::on_comboBox_currentIndexChanged(int index)
 {
     emit algoChanged(index);
 }
+
+void MainWindow::on_pointOnEdgeSpinBox_valueChanged(int arg1)
+{
+    emit pointOnEdgeChange(arg1);
+}
+
+void MainWindow::on_randomPointSpinBox_valueChanged(int arg1)
+{
+    emit randomPointChange(arg1);
+}
