@@ -937,7 +937,6 @@ void Processor::process(Mat* img)
         break;
 
     case 1:
-        cout << "------ Sketching Splines with Tensor ------" << endl;
         result = sketchingSplinesWithGradient(*img);
         break;
 
