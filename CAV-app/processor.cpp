@@ -707,6 +707,8 @@ void draw_delaunay( Mat& img, Subdiv2D& subdiv)
         Scalar colour = mean(img, mask);
         fillPoly(output_image, pts, npts, 1, colour);
     }
+
+    img = output_image;
 }
 
 //Draw voronoi diagram
