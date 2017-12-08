@@ -885,7 +885,7 @@ Mat Processor::lowPoly(const Mat & img)
     vector<Point2f> points;
 
     // Draw of points acording to the probability
-    for(int i = 0; i < 5000; i++)
+    for(int i = 0; i < m_pointOnEdge; i++)
     {
         double rand_x = rand()/(double)RAND_MAX;
         double rand_y = rand()/(double)RAND_MAX;
@@ -896,7 +896,7 @@ Mat Processor::lowPoly(const Mat & img)
     }
 
     // Noise for uniform surface
-    for(int i = 0; i < 100; i++)
+    for(int i = 0; i < m_randomPoint; i++)
     {
         int rand_x = rand()%height;
         int rand_y = rand()%width;
@@ -936,6 +936,14 @@ void Processor::process(Mat* img)
 
     case 3:
         result = sketchingLinesWithGradient(*img);
+        break;
+
+    case 4:
+        result = lowPoly(*img);
+        break;
+
+    case 5:
+        result = lowPoly(*img);
         break;
 
     default:
