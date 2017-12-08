@@ -123,8 +123,6 @@ void Processor::getTensor(const Mat & img, Mat &a, Mat &b, Mat &d, Mat &tensor)
     //GaussianBlur(img, imgBlur, Size(7,7),0);
     bilateralFilter(img, imgBlur,6, 150, 150);
 
-    imshow("blur", imgBlur);
-
     Sobel(imgBlur, gX, CV_32F, 0, 1, 5);
     Sobel(imgBlur, gY, CV_32F, 1, 0, 5);
 
@@ -158,7 +156,7 @@ void Processor::getTensor(const Mat & img, Mat &a, Mat &b, Mat &d, Mat &tensor)
 
     tensor = norm_0_255(white);
     //imshow("tensor", tensor);
-    imwrite("tensor.jpg", tensor);
+    //imwrite("tensor.jpg", tensor);
 }
 
 void Processor::drawTensor(const Mat & img)
@@ -271,10 +269,6 @@ Mat Processor::sketchingLinesWithTensor(const Mat & img)
         }
     }
 
-
-    imwrite("sketchingLinesTensor.jpg", white);
-    cout << "------ Saving Sketching ------" << endl;
-    imshow("white", white);
     return white;
 }
 
@@ -351,9 +345,6 @@ Mat Processor::sketchingLinesWithGradient(const Mat & img)
         }
     }
 
-    imwrite("sketchingLinesGradient.jpg", white);
-    cout << "------ Saving Sketching ------" << endl;
-    imshow("white", white);
     return white;
 }
 
@@ -558,10 +549,6 @@ Mat Processor::sketchingSplinesWithTensor(const Mat & img)
         }
     }
 
-
-    imwrite("sketchingSplinesTensor.jpg", white);
-    cout << "------ Saving Sketching ------" << endl;
-    imshow("white", white);
     return white;
 }
 
@@ -685,12 +672,6 @@ Mat Processor::sketchingSplinesWithGradient(const Mat & img)
         }
     }
 
-    imwrite("sketchingSplinesGradient.jpg", white);
-    imshow("white", white);
-    // imshow("GradX", gradX);
-    // imshow("GradY", gradY);
-    cout << "------ Saving Sketching ------" << endl;
-    imshow("white", white);
     return white;
 }
 
@@ -726,8 +707,6 @@ void draw_delaunay( Mat& img, Subdiv2D& subdiv)
         Scalar colour = mean(img, mask);
         fillPoly(output_image, pts, npts, 1, colour);
     }
-
-    imshow("window_name", output_image);
 }
 
 //Draw voronoi diagram
@@ -853,7 +832,6 @@ void Processor::prob_edge_tensor(const Mat& picture, vector<float>& prob_x, vect
         partial_sum(prob_y[i].begin(), prob_y[i].end(), prob_y[i].begin(), plus<double>());
     }
 
-    imshow("test",edge);
 }
 
 int Processor::getRandomPoint() const
@@ -964,7 +942,9 @@ void Processor::process(Mat* img)
         result = sketchingSplinesWithTensor(*img);
         break;
     }
-    emit processedImage(&result);
+    imshow("result", result);
+    imwrite("result.jpg", result);
+    //emit processedImage(&result);
 }
 
 void Processor::setCount(int count)

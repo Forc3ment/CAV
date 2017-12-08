@@ -37,7 +37,6 @@ private slots:
     void on_runButton_pressed();
     void on_comboBox_currentIndexChanged(int index);
     void displayRaw(Mat* img);
-    void displayProcessed(Mat* img);
     void on_pointOnEdgeSpinBox_valueChanged(int arg1);
     void on_randomPointSpinBox_valueChanged(int arg1);
 

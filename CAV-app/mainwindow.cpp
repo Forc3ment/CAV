@@ -47,18 +47,11 @@ void MainWindow::initUi()
     ui->thicknessSpinBox->setEnabled(false);
     ui->thresholdSpinBox->setEnabled(false);
     ui->runButton->setEnabled(false);
+    ui->randomPointSpinBox->setEnabled(false);
+    ui->pointOnEdgeSpinBox->setEnabled(false);
 
 }
 
-void MainWindow::displayProcessed(Mat* img)
-{
-    Mat rgb;
-    QPixmap p;
-    cvtColor(*img, rgb, (-2*img->channels()+10));
-    p.convertFromImage(QImage(rgb.data, rgb.cols, rgb.rows, QImage::Format_RGB888));
-    ui->processed->setPixmap(p);
-    resize(img->cols, img->rows);
-}
 
 void MainWindow::displayRaw(Mat* img)
 {

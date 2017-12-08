@@ -17,10 +17,9 @@ controller::controller(MainWindow* window, QObject *parent) :
     connect(&m_window,SIGNAL(randomPointChange(int)),this,SLOT(setRandomPoint(int)));
 
     connect(this, SIGNAL(rawImageToDisplay(Mat*)),&m_window,SLOT(displayRaw( Mat*)));
-    //connect(this, SIGNAL(processedImageToDisplay(Mat*)),&m_window,SLOT(displayProcessed(Mat*)));
     connect(&m_window,SIGNAL(runButtonPressed()),this,SLOT(startProcessing()));
     connect(this, SIGNAL(rawImageToProcess(Mat*)),&m_processor,SLOT(process(Mat*)));
-    connect(&m_processor,SIGNAL(processedImage(Mat*)),this,SLOT(receiveProcessedImage(Mat*)));
+    //connect(&m_processor,SIGNAL(processedImage(Mat*)),this,SLOT(receiveProcessedImage(Mat*)));
 }
 
 controller::~controller()
