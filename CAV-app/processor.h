@@ -10,7 +10,6 @@
 #include <time.h>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
-#include <opencv2/contrib/contrib.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
 using namespace cv;
@@ -55,6 +54,7 @@ private:
     Mat sketchingSplinesWithGradient(const Mat & img);
     Mat lowPoly(const Mat & img);
     void prob_edge_tensor(const Mat& picture, vector<float>& prob_x, vector< vector<float> >& prob_y, const int& height,const int& width);
+    Mat waterfall(const Mat & img);
 
     int m_count = 5000;
     int m_thickness = 0;

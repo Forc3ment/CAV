@@ -15,7 +15,26 @@ string toString(int i) // convert int to string
     return value.str();
 }
 
-//==================================================================================  a =====
+//=======================================================================================
+// Callback function
+//=======================================================================================
+void CallBackFunc(int event, int x, int y, int flags, void* userdata)
+{
+     if  ( event == EVENT_LBUTTONDOWN )
+     {
+          cout << "Left button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
+     }
+     else if  ( event == EVENT_RBUTTONDOWN )
+     {
+          cout << "Right button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
+     }
+     else if  ( event == EVENT_MBUTTONDOWN )
+     {
+          cout << "Middle button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
+     }
+}
+
+//=======================================================================================
 // Mat norm_0_255(InputArray _src)
 // Create and return normalized image
 //=======================================================================================
@@ -121,7 +140,7 @@ void Processor::getTensor(const Mat & img, Mat &a, Mat &b, Mat &d, Mat &tensor)
     d = Mat(img.size(), CV_32F);
 
     //GaussianBlur(img, imgBlur, Size(7,7),0);
-    bilateralFilter(img, imgBlur,6, 150, 150);
+    bilateralFilter(img, imgBlur, 6, 5, 5);
 
     Sobel(imgBlur, gX, CV_32F, 0, 1, 5);
     Sobel(imgBlur, gY, CV_32F, 1, 0, 5);
@@ -836,26 +855,6 @@ void Processor::prob_edge_tensor(const Mat& picture, vector<float>& prob_x, vect
 
 }
 
-int Processor::getRandomPoint() const
-{
-    return m_randomPoint;
-}
-
-void Processor::setRandomPoint(int randomPoint)
-{
-    m_randomPoint = randomPoint;
-}
-
-int Processor::getPointOnEdge() const
-{
-    return m_pointOnEdge;
-}
-
-void Processor::setPointOnEdge(int pointOnEdge)
-{
-    m_pointOnEdge = pointOnEdge;
-}
-
 Mat Processor::lowPoly(const Mat & img)
 {
     Mat imgCopy = img.clone();
@@ -918,11 +917,28 @@ Mat Processor::lowPoly(const Mat & img)
 }
 
 //=======================================================================================
+// Waterfall
+//=======================================================================================
+
+Mat Processor::waterfall(const Mat & img)
+{
+    Mat white;
+    createWhiteImage(img.rows,img.cols,white);
+
+    return white;
+}
+
+//=======================================================================================
 // MAIN & ACCESSEUR
 //=======================================================================================
 
 void Processor::process(Mat* img)
 {
+    namedWindow("result", 1);
+    Mat copy;
+    Mat test, test2, test3;
+    double alpha = 0.5;
+
     switch ( m_algo ) {
     case 0:
         result = sketchingSplinesWithTensor(*img);
@@ -946,6 +962,27 @@ void Processor::process(Mat* img)
 
     case 5:
         result = lowPoly(*img);
+        break;
+
+    case 6:
+        setMouseCallback("result", CallBackFunc, NULL);
+        result = waterfall(*img);
+        break;
+
+    case 7 :
+        result = sketchingSplinesWithTensor(*img);
+        test = imread("../texture.jpg", CV_LOAD_IMAGE_COLOR);
+        if(!test.data ) { // Check for invalid input
+            std::cout <<  "Could not open or find the image "<< std::endl ;
+            waitKey(0); // Wait for a keystroke in the window
+        }
+        else
+        {
+            resize(test, test2, img->size());
+        }
+        bilateralFilter(*img, test3, 6, 150, 150);
+        addWeighted(test3,alpha,test2,1-alpha,0.0,copy);
+        result = copy.mul(result/255);
         break;
 
     default:
@@ -1005,6 +1042,26 @@ int Processor::getAlgo() const
 void Processor::setAlgo(int algo)
 {
     m_algo = algo;
+}
+
+int Processor::getRandomPoint() const
+{
+    return m_randomPoint;
+}
+
+void Processor::setRandomPoint(int randomPoint)
+{
+    m_randomPoint = randomPoint;
+}
+
+int Processor::getPointOnEdge() const
+{
+    return m_pointOnEdge;
+}
+
+void Processor::setPointOnEdge(int pointOnEdge)
+{
+    m_pointOnEdge = pointOnEdge;
 }
 
 

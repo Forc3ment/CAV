@@ -1,5 +1,6 @@
 CC=g++
-LIBS= -lopencv_core -lopencv_imgproc -lopencv_highgui -lopencv_contrib
+OPENCV = `pkg-config opencv --cflags --libs`
+LIBS = $(OPENCV)
 FLAGS= -std=c++11 -Wall -pedantic -DDEBUG -g
 EXE=CAV.exe
 
@@ -20,3 +21,4 @@ main.o: main.cpp
 clean:
 	rm -rf *.o
 	rm -rf $(PROJECT_NAME)
+

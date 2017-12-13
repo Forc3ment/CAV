@@ -87,7 +87,7 @@ void MainWindow::on_runButton_pressed()
 void MainWindow::on_comboBox_currentIndexChanged(int index)
 {
     emit algoChanged(index);
-    if(index == 0 || index == 1 || index == 2 || index == 3)
+    if(index == 0 || index == 1 || index == 2 || index == 3 || index == 7)
     {
         ui->colorCheckBox->setEnabled(true);
         ui->lineCountSpinBox->setEnabled(true);

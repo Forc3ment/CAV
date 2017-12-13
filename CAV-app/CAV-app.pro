@@ -40,5 +40,6 @@ FORMS += \
 
 INCLUDEPATH += /usr/include/opencv2
 
-LIBS += -L/usr/lib -lopencv_core -lopencv_highgui -lopencv_imgproc
+LIBS = `pkg-config opencv --cflags --libs`
+#LIBS += -L/usr/lib -lopencv_core -lopencv_highgui -lopencv_imgproc
 

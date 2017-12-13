@@ -2,7 +2,8 @@
 #include <string>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
-#include <opencv2/contrib/contrib.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+//#include <opencv2/contrib/contrib.hpp>
 
 using namespace cv;
 using namespace std;
@@ -109,7 +110,6 @@ void getSingularValue(const float a, const float b, const float d, Vec2f &singul
 
 void getTensor(const Mat & img, Mat &a, Mat &b, Mat &d, Mat &tensor)
 {
-
 	Mat imgBlur;
 	Mat gX, gY;
 	Mat white = Mat(img.size(), CV_32F);
@@ -553,7 +553,19 @@ void sketchingSplinesWithTensor(const Mat & img)
 		}
 	}
 
+	// Mat copy ;
+	// Mat copy2 ;
+	// bilateralFilter(img, copy, 4, 150, 150);
 
+	// copy2 = copy.mul(white/255);
+	// // for (int i = 0; i < img.rows; ++i) {
+ // //        for (int j = 0; j < img.cols; ++j) {
+ // //            copy.at<Vec3b>(i,j) = copy.at<Vec3b>(i,j) * temp.at<float>(i,j);
+ // //        }
+ // //    }
+
+	// imshow("test",copy2);
+	// waitKey();
 	imwrite("sketchingSplinesTensor.jpg", white);
 	cout << "------ Saving Sketching ------" << endl;
 }
@@ -708,10 +720,10 @@ int main(int argc, char** argv){
         return -1;
     }
 
-    sketchingSplinesWithGradient(inputImageSrc);
+    //sketchingSplinesWithGradient(inputImageSrc);
     sketchingSplinesWithTensor(inputImageSrc);
-	sketchingLinesWithGradient(inputImageSrc);
-    sketchingLinesWithTensor(inputImageSrc);
+	//sketchingLinesWithGradient(inputImageSrc);
+    //sketchingLinesWithTensor(inputImageSrc);
 
 	//cvWaitKey();
   	return 0;

@@ -107,6 +107,16 @@
           <string>LowPoly Tensor</string>
          </property>
         </item>
+        <item>
+         <property name="text">
+          <string>Waterfall</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Sketching with texture</string>
+         </property>
+        </item>
        </widget>
       </item>
       <item>
